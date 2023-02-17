@@ -70,19 +70,18 @@ ln -s $ANDROID_NDK_HOME third_party/android_ndk
 * Apply patch running the following command
 ```
 cd ..
-./apply_patch.sh
+./scripts/apply_patch.sh
 ```
 
-* run the following command in the root folder command
+* run the following command in the root folder
 ```
-cd ..
-./build.sh
+./scripts/build.android.sh
 ```
-> you can run: `../build_v8 debug` if you want to build v8 in debug, by default it's built in release.
+> you can run: `../build.android.sh debug` if you want to build v8 in debug, by default it's built in release.
 
 ### Outputs
 
-The output folder is called `dist` and it's created at `v8` root level.
+The output folder is called `dist` and it's created at the repository root level.
 
 ### HOW TO CREATE A NEW PATCH file
 
@@ -90,7 +89,7 @@ git diff --cached > patch.diff
 
 ### What to do next
 
-* Copy the files from the **v8/dist** folder in the corresponding folder in [android-runtime](https://github.com/NativeScript/android-runtime/tree/master/test-app/runtime/src/main/libs)
+* Copy the files from the **dist** folder in the corresponding folder in [android-runtime](https://github.com/NativeScript/android-runtime/tree/master/test-app/runtime/src/main/libs)
 * Copy the files from the **v8/buildtools/third_party/libc++/trunk/include** (libc++) into [android-runtime/test-app/runtime/src/main/cpp/include/libc++](https://github.com/NativeScript/android-runtime/tree/master/test-app/runtime/src/main/cpp/include/libc++)
 * Update the **v8-versions.json** file in the [android-runtime root folder](https://github.com/NativeScript/android-runtime/blob/master/v8-versions.json)
 * Update the **settings.json** file in [android-runtime/build-artifacts/project-template-gradle](https://github.com/NativeScript/android-runtime/tree/master/build-artifacts/project-template-gradle/settings.json)
