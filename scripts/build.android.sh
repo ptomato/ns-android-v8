@@ -15,19 +15,12 @@ shift $(expr ${OPTIND} - 1)
 
 
 if [ "$(uname)" == "Darwin" ]; then
-        NDK_BUILD_TOOLS_ARR=([arm]=$ANDROID_NDK/toolchains/arm-linux-androideabi-4.9/prebuilt/darwin-x86_64/arm-linux-androideabi/bin \
-                     [arm64]=$ANDROID_NDK/toolchains/aarch64-linux-android-4.9/prebuilt/darwin-x86_64/aarch64-linux-android/bin \
-                     [x86]=$ANDROID_NDK/toolchains/x86-4.9/prebuilt/darwin-x86_64/i686-linux-android/bin \
-                     [x64]=$ANDROID_NDK/toolchains/x86_64-4.9/prebuilt/darwin-x86_64/x86_64-linux-android/bin)
+        HOST_TAG=darwin-x86_64
 else
-        NDK_BUILD_TOOLS_ARR=([arm]=$ANDROID_NDK/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64/arm-linux-androideabi/bin \
-                     [arm64]=$ANDROID_NDK/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/aarch64-linux-android/bin \
-                     [x86]=$ANDROID_NDK/toolchains/x86-4.9/prebuilt/linux-x86_64/i686-linux-android/bin \
-                     [x64]=$ANDROID_NDK/toolchains/x86_64-4.9/prebuilt/linux-x86_64/x86_64-linux-android/bin)
+        HOST_TAG=linux-x86_64
 fi
-
-# The order of CPU architectures in this array must be the same
-# as the order of NDK tools in the NDK_BUILD_TOOLS_ARR array
+TOOLCHAIN_BIN="$ANDROID_NDK/toolchains/llvm/prebuilt/$HOST_TAG/bin"
+echo "TOOLCHAIN_BIN $TOOLCHAIN_BIN"
 
 BUILD_DIR_PREFIX="outgn"
 
@@ -54,7 +47,7 @@ for CURRENT_ARCH in ${ARCH_ARR[@]}
 do
 
         # make fat build
-        V8_FOLDERS=(v8_compiler v8_base_without_compiler v8_libplatform v8_snapshot v8_libbase v8_bigint torque_generated_initializers torque_generated_definitions)
+        V8_FOLDERS=(v8_compiler v8_base_without_compiler v8_libplatform v8_snapshot v8_libbase v8_bigint v8_turboshaft v8_heap_base torque_generated_initializers torque_generated_definitions)
         export CCACHE_CPP2=yes
 	export CCACHE_SLOPPINESS=time_macros
 	export PATH=$V8_DIR/third_party/llvm-build/Release+Asserts/bin:$PATH
@@ -65,12 +58,10 @@ do
 
 
         OUTFOLDER=${BUILD_DIR_PREFIX}/${CURRENT_ARCH}-${BUILD_TYPE}
-        CURRENT_BUILD_TOOL=${NDK_BUILD_TOOLS_ARR[$CURRENT_ARCH]}
         V8_FOLDERS_LEN=${#V8_FOLDERS[@]}
         LAST_PARAM=""
         CURRENT_DIST_DIR="$DIST_DIR/$CURRENT_ARCH-$BUILD_TYPE"
         echo "CURRENT_ARCH $CURRENT_ARCH"
-        echo "CURRENT_BUILD_TOOL $CURRENT_BUILD_TOOL"
 
         mkdir -p $CURRENT_DIST_DIR
 
@@ -79,26 +70,26 @@ do
         LAST_PARAM="${LAST_PARAM} ${OUTFOLDER}/obj/${CURRENT_V8_FOLDER}/*.o"
         done
 
-        $CURRENT_BUILD_TOOL/ar r $CURRENT_DIST_DIR/libinspector_protocol.a $OUTFOLDER/obj/third_party/inspector_protocol/crdtp/*.o $OUTFOLDER/obj/third_party/inspector_protocol/crdtp_platform/*.o
-        $CURRENT_BUILD_TOOL/ranlib $CURRENT_DIST_DIR/libinspector_protocol.a
+        $TOOLCHAIN_BIN/llvm-ar r $CURRENT_DIST_DIR/libinspector_protocol.a $OUTFOLDER/obj/third_party/inspector_protocol/crdtp/*.o $OUTFOLDER/obj/third_party/inspector_protocol/crdtp_platform/*.o
+        $TOOLCHAIN_BIN/llvm-ranlib $CURRENT_DIST_DIR/libinspector_protocol.a
 
         LAST_PARAM="${LAST_PARAM} ${OUTFOLDER}/obj/third_party/zlib/zlib/*.o ${OUTFOLDER}/obj/third_party/zlib/zlib_adler32_simd/*.o ${OUTFOLDER}/obj/third_party/zlib/google/compression_utils_portable/*.o ${OUTFOLDER}/obj/third_party/zlib/zlib_inflate_chunk_simd/*.o"
 
         LAST_PARAM="${LAST_PARAM} ${OUTFOLDER}/obj/third_party/android_ndk/cpu_features/*.o"
-        LAST_PARAM="${LAST_PARAM} ${OUTFOLDER}/obj/cppgc_base/*.o ${OUTFOLDER}/obj/v8_cppgc_shared/*.o"
+        LAST_PARAM="${LAST_PARAM} ${OUTFOLDER}/obj/cppgc_base/*.o"
         
         if [[ $CURRENT_ARCH = "arm" || $CURRENT_ARCH = "arm64" ]]; then
                 LAST_PARAM="${LAST_PARAM} ${OUTFOLDER}/obj/third_party/zlib/zlib_arm_crc32/*.o"
         fi
 
         if [[ $CURRENT_ARCH = "x86" || $CURRENT_ARCH = "x64" ]]; then
-                LAST_PARAM="${LAST_PARAM} ${OUTFOLDER}/obj/third_party/zlib/zlib_x86_simd/*.o ${OUTFOLDER}/obj/third_party/zlib/zlib_crc32_simd/*.o"
+                LAST_PARAM="${LAST_PARAM} ${OUTFOLDER}/obj/third_party/zlib/zlib_crc32_simd/*.o"
         fi
 
         THIRD_PARTY_OUT=$BUILD_DIR_PREFIX/$CURRENT_ARCH-$BUILD_TYPE/obj/buildtools/third_party
         LAST_PARAM="${LAST_PARAM} $THIRD_PARTY_OUT/libc++/libc++/*.o $THIRD_PARTY_OUT/libc++abi/libc++abi/*.o"
         
-        $CURRENT_BUILD_TOOL/ar r $CURRENT_DIST_DIR/libv8.a ${LAST_PARAM}
+        $TOOLCHAIN_BIN/llvm-ar r $CURRENT_DIST_DIR/libv8.a ${LAST_PARAM}
         
         # include files
         rsync -r --exclude '.git' --exclude '.cache' --exclude 'DEPS' --exclude 'DIR_METADATA' "$V8_DIR/include/" "$CURRENT_DIST_DIR/include/"

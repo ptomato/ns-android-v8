@@ -14,6 +14,8 @@ export PATH=`pwd`/depot_tools:"$PATH"
 ```
 sudo apt-get install curl libc6-dev-i386 g++-multilib
 ```
+- on fedora `sudo dnf install curl glibc-2*.i686`
+
 
 * Download and extract Android NDK r22b
 
@@ -22,6 +24,8 @@ Linux:
 curl -O https://dl.google.com/android/repository/android-ndk-r22b-linux-x86_64.zip
 unzip android-ndk-r22b-linux-x86_64.zip -d ndkr22b
 ```
+
+(install it with android studio??)
 
 * Export ANDROID_NDK_HOME environment variable
 ```
@@ -37,20 +41,20 @@ This will ensure that the required build dependencies are fetched by depot_tools
 ```
 solutions = [
   {
-    "url": "https://chromium.googlesource.com/v8/v8.git",
-    "managed": False,
     "name": "v8",
+    "url": "https://chromium.googlesource.com/v8/v8.git",
     "deps_file": "DEPS",
+    "managed": False,
     "custom_deps": {},
   },
 ]
 target_os = ['android']
 ```
 
-* checkout tag 9.7.106.13
+* checkout tag 11.0.226.9
 ```
 cd v8
-git checkout 9.7.106.13
+git checkout 11.0.226.9
 ```
 
 * Run sync
@@ -61,9 +65,7 @@ gclient sync
 * Create symlinks
 ```
 cp third_party/android_ndk/BUILD.gn $ANDROID_NDK_HOME
-rm -rf third_party/android_tools third_party/android_ndk
-mkdir third_party/android_tools
-ln -s $ANDROID_NDK_HOME third_party/android_tools/ndk
+rm -rf third_party/android_ndk
 ln -s $ANDROID_NDK_HOME third_party/android_ndk
 ```
 
@@ -90,7 +92,15 @@ git diff --cached > patch.diff
 ### What to do next
 
 * Copy the files from the **dist** folder in the corresponding folder in [android-runtime](https://github.com/NativeScript/android-runtime/tree/master/test-app/runtime/src/main/libs)
-* Copy the files from the **v8/buildtools/third_party/libc++/trunk/include** (libc++) into [android-runtime/test-app/runtime/src/main/cpp/include/libc++](https://github.com/NativeScript/android-runtime/tree/master/test-app/runtime/src/main/cpp/include/libc++)
+  * The folders have to be renamed to the corresponding [architecture tags](https://developer.android.com/ndk/guides/abis#sa) used by the Android NDK
+  * Copy the include and generated files to arch-independent locations
 * Update the **v8-versions.json** file in the [android-runtime root folder](https://github.com/NativeScript/android-runtime/blob/master/v8-versions.json)
 * Update the **settings.json** file in [android-runtime/build-artifacts/project-template-gradle](https://github.com/NativeScript/android-runtime/tree/master/build-artifacts/project-template-gradle/settings.json)
 * Replace all the needed header and inspector files in the repo. The following [article](https://github.com/NativeScript/android-runtime/blob/master/docs/extending-inspector.md) might be helpful
+
+
+- don't delete libzip.a, zip.h, zipconf.h, they are not build products of V8
+- copy `src/V8NativeScriptExtension.h` to `test-app/runtime/src/main/cpp/include/`
+- don't copy to src/main/libs/$arch/{include,generated}
+- how to update to the latest libzip? https://github.com/NativeScript/android/pull/1724/files
+- check what LIBCPP build flags V8 builds with
