@@ -102,8 +102,8 @@ do
         
         # include files
         rsync -r --exclude '.git' --exclude '.cache' --exclude 'DEPS' --exclude 'DIR_METADATA' "$V8_DIR/include/" "$CURRENT_DIST_DIR/include/"
-        rsync -r --exclude '.git' --exclude '.git' "${OUTFOLDER}/gen/include/" "$CURRENT_DIST_DIR/include/"
-        rsync -r --exclude '.git' --exclude '.git' "$V8_DIR/third_party/android_ndk/sources/cxx-stl/llvm-libc++/include/" "$CURRENT_DIST_DIR/include/libc++/"
+        rsync -r --exclude '.git' "${OUTFOLDER}/gen/include/" "$CURRENT_DIST_DIR/include/"
+        rsync -r --exclude '.git' "$V8_DIR/third_party/android_ndk/sources/cxx-stl/llvm-libc++/include/" "$CURRENT_DIST_DIR/include/libc++/"
         
         # generated files
         rsync -r --exclude '.git' --exclude '*.cache' --exclude 'snapshot.cc' --exclude 'embedded.S' "${OUTFOLDER}/gen/" "$CURRENT_DIST_DIR/generated/"
